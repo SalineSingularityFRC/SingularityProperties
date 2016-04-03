@@ -1,8 +1,12 @@
 package org.usfirst.frc.team5066.properties;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Properties;
 
 import edu.wpi.first.wpilibj.DriverStation;
@@ -12,7 +16,8 @@ import edu.wpi.first.wpilibj.DriverStation;
  * 
  * @author Saline Singularity 5066
  * 
- * @version 2.0
+ * @version 2.1
+ * Now with properties-file writing functionality that actually works well
  */
 
 public class SingularityProperties {
@@ -20,7 +25,11 @@ public class SingularityProperties {
 	private Properties defaultProps;
 	private Properties props;
 	private String propFileURL;
-
+	
+	//define lists necessary to re-write file at writing time
+	private ArrayList changedProperties;
+	private ArrayList<PropFileLine> propFileLines;
+	
 	/**
 	 * Constructor for SingularityPropsReader
 	 * 
@@ -30,15 +39,22 @@ public class SingularityProperties {
 	 *             If the file is invalid or lacks read access
 	 */
 	public SingularityProperties(String propFileURL) throws IOException {
+
+		changedProperties = new ArrayList();
+		propFileLines = new ArrayList<PropFileLine>();
+		
 		this.propFileURL = propFileURL;
 		props = readProperties(propFileURL);
 		defaultProps = new Properties();
+		
 	}
 
-	public SingularityProperties() {
+	/*
+	public SingularityProperties() throws IOException{
 		this.propFileURL = null;
 		defaultProps = new Properties();
 	}
+	*/
 
 	/**
 	 * Used to get the file URL
@@ -155,16 +171,40 @@ public class SingularityProperties {
 	 *             If the file lacks read access
 	 */
 	private Properties readProperties(String propFileURL) throws IOException {
+		
+		//TODO Test all of this!
+		
 		Properties prop = new Properties();
-		String propURL = propFileURL;
+		File f = new File(propFileURL);
 		FileInputStream fileInputStream;
 
-		fileInputStream = new FileInputStream(propURL);
+		fileInputStream = new FileInputStream(f);
 		prop.load(fileInputStream);
+		
 		fileInputStream.close();
+		//Begin new code
+		
+		String line;
+		
+		//must re-create the FileInputStream or else the reader will start at the end of the file
+		fileInputStream = new FileInputStream(f);
+		
+		//TODO 
+		BufferedReader br = new BufferedReader(new InputStreamReader(fileInputStream));
+		while ((line = br.readLine()) != null) {
+			PropFileLine lineObject = new PropFileLine(line);
+			propFileLines.add(lineObject);
+			System.out.print(line);
+			System.out.println("   <-- " + lineObject.getLineType());
+		}
+		
+		br.close();
+		//fileInputStream.close();
 
+		
 		return prop;
 	}
+	
 
 	/**
 	 * Sets a certain property in the file to a certain object
@@ -181,11 +221,27 @@ public class SingularityProperties {
 		//TODO fix this method. Right now it saves all Properties to the file in a pattern that
 		//is in no particular order. It also delets all comments and original spacing.
 		
+		/*TODO Replace the whole "props.store()" method with a method where the code iterates through all
+		 * Property lines in the list of file lines until it find the one that needs to be changed, changes
+		 * it to what it needs to be, and then saves the entire list of properties to the properties file.
+		 */
+		
+		//load the properties file so that direct user changes to the file are not overwritten
+		reloadProperties();
+		
 		FileOutputStream out = new FileOutputStream(propFileURL);
 
 		props.setProperty(propName, o.toString());
 		props.store(out, null);
 		out.close();
+
+		/*
+		 * TODO See if calling this over and over again creates lag. If it does,
+		 * a solution might be to separate the reloadProperties() method into
+		 * two segments. We only really want the part that reads the file to the
+		 * Properties object, not the one that totally reloads the array of
+		 * lines (we should already have that)
+		 */
 		reloadProperties();
 	}
 
