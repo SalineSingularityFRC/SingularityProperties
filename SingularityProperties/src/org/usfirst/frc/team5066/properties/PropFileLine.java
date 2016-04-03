@@ -13,13 +13,12 @@ public class PropFileLine {
 	
 	PropFileLine(String lineText) {
 		
-		String commentPattern = "(\\s*)(#)(.*)";
-		String propertyPattern = "(\\s*)(\\w*)(\\s*)([=:])(\\s*)(\\w*)(\\s*)";
-		String propAndCommentPattern = propertyPattern + commentPattern;
-		String whiteSpacePattern = "\\s*";
+		final String commentPattern = "(\\s*)(#)(.*)";
+		final String propertyPattern = "(\\s*)(\\w*)(\\s*)([=:])(\\s*)(\\w*)(\\s*)";
+		final String propAndCommentPattern = propertyPattern + commentPattern;
+		final String whiteSpacePattern = "\\s*";
 		
 		this.lineText = lineText;
-		//TODO write code to determine line type from line text -- use Regex
 				
 		//Determine the line's type
 		if(lineMatchesRegex(propertyPattern)){
@@ -37,6 +36,18 @@ public class PropFileLine {
 		//set property only if this a PROPERTY type line
 		if(lineType == LineType.PROPERTY ){
 			
+			Pattern p = Pattern.compile("\\w*");
+			m = p.matcher(lineText);
+			
+			/*TODO the find() method is not working as expected. Manually use split() and
+			 * other String methods to get the nameand value substrings 
+			 */
+			String temp = lineText.replaceAll("\\s+", "");
+			temp.split("=|:");
+			
+			prop = new Property(temp.split("=|:")[0], temp.split("=|:")[1]);
+			System.out.println("============== Property Name: " + prop.getName());
+			System.out.println("============== Property Value: " + prop.getValue());
 			//use substring to set name to the name and value to the value
 		} else {
 			prop = null;
@@ -46,6 +57,14 @@ public class PropFileLine {
 	private boolean lineMatchesRegex(String regex) {
 		return (m = (Pattern.compile(regex)).matcher(lineText)).matches();
 	}
+	
+	/* Does not work properly
+	 * 
+	private String getSubStringFromMatcher(Matcher m) {
+		System.out.println(m.find());
+		return (lineText.substring(m.start(), m.end()));
+	}
+	*/
 	
 	public LineType getLineType() {
 		return lineType;
