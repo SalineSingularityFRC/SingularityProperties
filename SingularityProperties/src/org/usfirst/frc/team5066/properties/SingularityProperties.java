@@ -1,11 +1,13 @@
 package org.usfirst.frc.team5066.properties;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -173,6 +175,7 @@ public class SingularityProperties {
 	private Properties readProperties(String propFileURL) throws IOException {
 		
 		//TODO Test all of this!
+		propFileLines.clear();
 		
 		Properties prop = new Properties();
 		File f = new File(propFileURL);
@@ -191,12 +194,16 @@ public class SingularityProperties {
 		
 		//TODO 
 		BufferedReader br = new BufferedReader(new InputStreamReader(fileInputStream));
+		int size;
 		while ((line = br.readLine()) != null) {
 			PropFileLine lineObject = new PropFileLine(line);
 			propFileLines.add(lineObject);
+			/*
 			System.out.print(line);
 			System.out.println("   <-- " + lineObject.getLineType());
+			*/
 		}
+		System.out.println("lines array size at reading: " + propFileLines.size());
 		
 		br.close();
 		//fileInputStream.close();
@@ -211,12 +218,12 @@ public class SingularityProperties {
 	 * 
 	 * @param propName
 	 *            Which property to change
-	 * @param o
+	 * @param newValue
 	 *            What to change it to (uses the {@code .toString()} method)
 	 * @throws IOException
 	 *             If file is not valid or does not allow write access
 	 */
-	public void setProperty(String propName, Object o) throws IOException {
+	public void setProperty(String propName, String newValue) throws IOException {
 		
 		//TODO fix this method. Right now it saves all Properties to the file in a pattern that
 		//is in no particular order. It also delets all comments and original spacing.
@@ -228,13 +235,54 @@ public class SingularityProperties {
 		
 		//load the properties file so that direct user changes to the file are not overwritten
 		reloadProperties();
-		
+		/*
 		FileOutputStream out = new FileOutputStream(propFileURL);
 
 		props.setProperty(propName, o.toString());
 		props.store(out, null);
 		out.close();
-
+		*/
+		
+		//Find the target property and change its value
+		for(PropFileLine line : propFileLines) {
+			
+			if(line.getLineType() == LineType.PROPERTY || line.getLineType() == LineType.PROP_AND_COMMENT) {
+				
+				System.out.println("Iterating through property \"" + line.getProperty().getName() + "\"");
+				
+				if(line.getProperty().getName().equals(propName)){
+					line.setProperty(newValue);
+					System.err.println("Match found!");
+					System.err.println("--> Match value is currently \"" + line.getProperty().getValue() + "\"");
+					System.err.println("Match test is currently \"" + line.getLineText());
+					break;
+				}
+			}
+		}
+		
+		//Write file with new property value
+		//TODO If necessary, incorporate this loop into the previous one for more efficiency
+		
+		File fOld = new File(propFileURL);
+		System.out.println("File successfully deleted? " + fOld.delete());
+		
+		File fout = new File(propFileURL);
+		FileOutputStream fos = new FileOutputStream(fout);
+	 
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+		
+		System.out.print("Properties file length: " + propFileLines.size());
+				
+		for (PropFileLine line : propFileLines) {
+			bw.write(line.getLineText());
+			bw.newLine();
+		}
+		
+		bw.close();
+		
+		/*TODO iterate through each of the property file lines in the array to find the proper one, then, to test, print out the entire file after changing the property
+		 * TODO then save the file
+		 */
 		/*
 		 * TODO See if calling this over and over again creates lag. If it does,
 		 * a solution might be to separate the reloadProperties() method into
@@ -329,11 +377,19 @@ public class SingularityProperties {
 			} else {
 				// Note - all messages such as the following are automatically
 				// logged by DriverStation
+				
+				
 				DriverStation.reportError(
 						"Failed to find property in defaults: " + name + "\n - THROWING EXCEPTION!!! \n \n ...", false);
 
 				SingularityPropertyNotFoundException spnfe = new SingularityPropertyNotFoundException(name);
 				throw spnfe;
+				
+				/* TODO Implement this later
+				DriverStation.reportError(
+						"Failed to find property in defaults: " + name + "\n - SETTING PROPERTY TO NULL \n \n ...", false);
+				return null;
+				*/
 			}
 		}
 
